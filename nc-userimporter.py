@@ -260,6 +260,9 @@ qr = qrcode.QRCode(
 # This will generate a random password with 1 random uppercase letter, 3 random lowercase letters,
 # 3 random digits, and 1 random special character--this can be adjusted as needed.
 # Then it combines each random character and creates a random order.
+
+# generate more dynamic Password
+# This Funktion is outdated use dynamicPW instead
 def pwgenerator():
   PWUPP = random.SystemRandom().choice(string.ascii_uppercase)
   PWLOW1 = random.SystemRandom().choice(string.ascii_lowercase)
@@ -273,6 +276,17 @@ def pwgenerator():
   PWD = PWUPP + PWLOW1 + PWLOW2 + PWLOW3 + PWDIG1 + PWDIG2 + PWDIG3 + PWSPEC
   PWD = ''.join(random.sample(PWD,len(PWD)))
   return(PWD)
+
+def dynamicPW(length):
+  password = ""
+  for i in range(length):
+    rand_result = [0,0,0,0]
+    rand_result[0] = random.SystemRandom().choice(string.ascii_uppercase)
+    rand_result[1] = random.SystemRandom().choice(string.ascii_lowercase)
+    rand_result[2] = random.SystemRandom().choice(string.digits)
+    rand_result[3] = random.SystemRandom().choice('!@*(§')
+    password = password + rand_result[random.randint(0,3)]
+  return(password)
 
 # display expected results before executing CURL
   # display expected results for EduDocs-users
@@ -368,7 +382,8 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
     row[0] = line.translate(mapping) # convert special characters and umlauts
     if config_GeneratePassword == 'yes':
       if not row[2]:
-        row[2] = pwgenerator()
+        row[2] = dynamicPW(12)
+        # The Funktion pwgenerator is outdated use dynamicPW instead
     if config_EduDocs == 'yes':    
       if row[4]:
         grouplist = html.escape(row[4]).split(config_csvDelimiterGroups) # Groups in the CSV-file are split by semicolon --> load into list
@@ -601,9 +616,9 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 24))       
       # adds qr-code to pdf-file
-      im2 = Image(os.path.join( tmp_dir, html.escape(row[0]) + ".jpg" ), 200, 200)
-      Story.append(im2)
-      del im2
+      #im2 = Image(os.path.join( tmp_dir, html.escape(row[0]) + ".jpg" ), 200, 200)
+      #Story.append(im2)
+      #del im2
       if config_pdfOneDoc == 'no':
         # create pdf-file (single documents)
         doc.build(Story)	  
