@@ -527,7 +527,7 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       if config_EduDocs == 'yes':
         nclogo = "assets/EduDocs_Logo.jpg" # EduDocs-logo (if in EduDocs-mode)
       else:
-        nclogo = "assets/Nextcloud_Logo.jpg" # nextcloud-logo (if in normal mode)
+        nclogo = "assets/Logo_WLLV.jpeg" # nextcloud-logo (if in normal mode)
       ncuserlogin = html.escape(row[0]) # loginname
       ncusername = html.escape(row[1]) # username
       ncpassword = html.escape(row[2]) # password
