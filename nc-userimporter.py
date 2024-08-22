@@ -540,6 +540,7 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       Story.append(im)
       Story.append(Spacer(1, 12))
 
+
       styles=getSampleStyleSheet()
       styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
       # adds text to pdf-file
