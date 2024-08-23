@@ -21,12 +21,11 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 # This tool creates Nextcloud users from a CSV file, which you exported from some other software.
-# There is also an extra EduDocs mode, which takes into account the special default settings
 # and security-related peculiarities when importing users in the school sector.
 
 # Copyright (C) 2019-2020 Torsten Markmann
 # Mail: info@uplinked.net 
-# WWW: edudocs.org uplinked.net
+
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,8 +46,8 @@ print("#########################################################################
 print("# NEXTCLOUD-USER-IMPORTER                                                         #")
 print("###################################################################################")
 print("")
-print("Copyright (C) 2019-2020 Torsten Markmann (t-markmann), edudocs.org & uplinked.net")
-print("Contributors: Johannes Schirge (Shen), Nicolas Stuhlfauth (nicostuhlfauth)")
+print("Copyright (C) 2019-2020 Torsten Markmann (t-markmann),")
+print("Contributors: Johannes Schirge (Shen), Nicolas Stuhlfauth (nicostuhlfauth), Daniel Bruns")
 print("This program comes with ABSOLUTELY NO WARRANTY")
 print("This is free software, and you are welcome to redistribute it under certain conditions.")
 print("For details look into LICENSE file (GNU GPLv3).")
@@ -87,60 +86,29 @@ config_GeneratePassword = config_xmlsoup.find('generatepassword').string
 config_sslVerify = eval(config_xmlsoup.find('sslverify').string)
 config_language = config_xmlsoup.find('language').string
 config_pdfOneDoc = config_xmlsoup.find('pdfonedoc').string
-config_EduDocs = config_xmlsoup.find('edudocs').string
 config_schoolgroup = config_xmlsoup.find('schoolgroup').string
 
-# EduDocs info-text
-if config_EduDocs == 'yes':
-  print("")
-  print("###################################################################################")
-  print("# EDUDOCS-MODUS (www.edudocs.org)                                                 #")
-  print("# Willkommen zum EduDocs-Nutzerimport.                                            #")
-  print("# Dieser Modus ist für den Import schulischer Nutzeraccounts vorgesehen und       #")
-  print("# berücksichtigt die besonderen datenschutzrechtlichen Vorgaben.                  #")
-  print("#                                                                                 #")
-  print("# Bitte stellen Sie sicher, dass die Import-Datei nur EINE Gruppe von Personen    #")
-  print("# enthält. Das heißt, entweder Lehrkräfte ODER Schüler ODER Schulpersonal.        #")
-  print("# Ein zeitgleicher Import verschiedener Personengruppen ist nicht möglich.        #")
-  print("#                                                                                 #")
-  print("# Prüfen Sie die Vorschau des Nutzerimports sehr genau, bevor Sie den             #")
-  print("# Importprozess starten.                                                          #")
-  print("###################################################################################")
-  print("")
-  print("")
-  print("Wenn Sie sicher sind, dass Ihre Einstellungen in der config.xml korrekt sind,")
-  print("drücken Sie eine beliebige Taste, um fortzufahren.")
-  input("Andernfalls brechen Sie den Prozess mit [STRG + C] ab.")
-  print("")
-  print("Sie haben sich entschieden, fortzufahren. Eine Nutzerimport-Vorschau wird generiert.")
-  print("")
-
-else:
-  print("")
-  print("###################################################################################")
-  print("# Welcome to the Nextcloud user import.                                           #")
-  print("# Please check the preview of the user import very carefully before you start     #")
-  print("# the import process.                                                             #")
-  print("###################################################################################")
-  print("")
-  print("")
-  print("When you are sure that your settings in the config.xml are correct,")
-  print("press [ANY KEY] to continue.")
-  input("Otherwise, press [CONTROL + C] to abort the process.")
-  print("")
-  print("They have decided to continue. A user import preview is generated.")
-  print("")    
+print("")
+print("###################################################################################")
+print("# Welcome to the Nextcloud user import.                                           #")
+print("# Please check the preview of the user import very carefully before you start     #")
+print("# the import process.                                                             #")
+print("###################################################################################")
+print("")
+print("")
+print("When you are sure that your settings in the config.xml are correct,")
+print("press [ANY KEY] to continue.")
+input("Otherwise, press [CONTROL + C] to abort the process.")
+print("")
+print("They have decided to continue. A user import preview is generated.")
+print("")    
 
 # check if user-import-csv-filme exists
 if not os.path.isfile(config_csvfile):
-    if config_EduDocs == 'yes':
-      print("FEHLER!")
-      print("Die csv-Datei (" + config_csvfile + "), die Sie in der config.xml eingetragen haben, existiert nicht. Bitte speichern Sie die Datei '" + config_csvfile + "' im Hauptverzeichnis des Scripts oder bearbeiten Sie die config.xml")
-      input("Drücken Sie eine beliebige Taste, um zu bestätigen und den Prozess zu beenden.")
-    else:
-      print("ERROR!")
-      print("The csv-file (" + config_csvfile + ") you specified in you config.xml does not exist. Please save '" + config_csvfile + "' in main-directory of the script or edit your config.xml")
-      input("Press [ANY KEY] to confirm and end the process.")     
+    
+    print("ERROR!")
+    print("The csv-file (" + config_csvfile + ") you specified in you config.xml does not exist. Please save '" + config_csvfile + "' in main-directory of the script or edit your config.xml")
+    input("Press [ANY KEY] to confirm and end the process.")     
     sys.exit(1)
 
 # cut http and https from ncUrl, because people often just copy & paste including protocol
@@ -289,52 +257,8 @@ def dynamicPW(length):
   return(password)
 
 # display expected results before executing CURL
-  # display expected results for EduDocs-users
-if config_EduDocs == 'yes':  
-  usertable = [["Nutzername","Anzeigename","Passwort","E-Mail","Gruppen","Gruppen-Admin für","Speicherplatz"]]
-  with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8') as csvfile:
-    readCSV = csv.reader(csvfile, delimiter=config_csvDelimiter)
-    next(readCSV, None)  # skip the headers
-    for row in readCSV:
-      if (len(row) != 7): # check if number of columns is consistent
-        print("FEHLER: Die Zeiles des Nutzers",html.escape(row[0]),"hat",len(row),"Spalten. Es müssen 7 sein. Bitte korrigieren Sie dies in der csv-Datei.")
-        input("Drücken Sie eine beliebige Taste, um den Prozess zu beenden.")
-        sys.exit(1)
-      pass_anon = html.escape(row[2])
-      if len(pass_anon) > 0:
-        pass_anon = "*" * (len(pass_anon)) # replace password for display on CLI
-      line = html.escape(row[0])
-      row[0] = line.translate(mapping) # convert special characters and umlauts
-      if row[4]:
-        grouplist = html.escape(row[4]).split(config_csvDelimiterGroups) # Groups in the CSV-file are split by semicolon --> load into list
-        if grouplist: # if grouplist contains group SchuelerInnen or Lehrkraefte, remove it
-          if "SchuelerInnen" in grouplist:
-            grouplist.remove('SchuelerInnen')
-          if "Lehrkraefte" in grouplist:
-            grouplist.remove('Lehrkraefte')
-          grouplist.append(config_schoolgroup) # and add group which is set in config-file (config_schoolgroup)
-      if not config_schoolgroup == 'SchuelerInnen': # if you import students in an EduDocs-instance, it is not possible to set groupadmins
-        if row[5]:
-          groupadminlist = html.escape(row[5]).split(config_csvDelimiterGroups) # Groupadmin Values in the CSV-file are split by semicolon --> load into list
-        else:
-          groupadminlist = []
-      else:
-        groupadminlist = []
-      currentuser = [html.escape(row[0]),html.escape(row[1]),pass_anon,html.escape(row[3]),grouplist,groupadminlist,html.escape(row[6])]
-      usertable.append(currentuser)
-  print(tabulate(usertable,headers="firstrow"))
 
-  # ask EduDocs-user to check values and continue
-  print("\nÜberprüfen Sie genau, ob die oben aufgeführten Nutzerdaten und Gruppenzuordnungen korrekt sind.")
-  if not config_GeneratePassword == 'yes':
-    print ("ACHTUNG: Sie haben festgelegt, dass Nutzer, bei denen kein Passwort eingetragen wurde, eine E-Mail erhalten, um sich selbst ein Passwort zu setzen. Bitte überprüfen Sie unbedingt, dass bei jedem Nutzer, bei dem kein Passwort vorgegeben ist, eine korrekte E-Mailadresse eingetragen ist!")
-  print("Wenn alles korrekt ist, drücken Sie eine beliebige Taste, um den Import-Prozess zu starten.")
-  input("Wenn nicht, drücken Sie [Strg + C], um abzubrechen.")
-  print("")
-  print("\nSie haben den Import-Prozess gestartet. Die Nutzer und Gruppen werden nun angelegt. Dies kann viel Zeit in Anspruch nehmen...\n")
-
-  # display expected results for nextcloud-users
-else:  
+def usercreate():  
   usertable = [["Username","Display name","Password","Email","Groups","Group admin for","Quota"]]
   with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8') as csvfile:
     readCSV = csv.reader(csvfile, delimiter=config_csvDelimiter)
@@ -362,10 +286,8 @@ else:
 
 # prepare pdf-output (if pdfOneDoc == yes)
 if config_pdfOneDoc == 'yes':
-  if config_EduDocs == 'yes':
-    output_filename = config_schoolgroup + "_" + today + ".pdf"
-  else:
-    output_filename = "userlist_" + today + ".pdf"
+
+  output_filename = "userlist_" + today + ".pdf"
   output_filepath = os.path.join( output_dir, output_filename )  
   doc = SimpleDocTemplate(output_filepath,pagesize=A4,
                          rightMargin=72,leftMargin=72,
@@ -384,27 +306,8 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       if not row[2]:
         row[2] = dynamicPW(12)
         # The Funktion pwgenerator is outdated use dynamicPW instead
-    if config_EduDocs == 'yes':    
-      if row[4]:
-        grouplist = html.escape(row[4]).split(config_csvDelimiterGroups) # Groups in the CSV-file are split by semicolon --> load into list
-        if grouplist: # if grouplist contains group SchuelerInnen or Lehrkraefte, remove it
-          if "SchuelerInnen" in grouplist:
-            grouplist.remove('SchuelerInnen')
-          if "Lehrkraefte" in grouplist:
-            grouplist.remove('Lehrkraefte')
-          grouplist.append(config_schoolgroup) # and add group which is set in config-file (config_schoolgroup)
-      if not config_schoolgroup == 'SchuelerInnen': # if you import students in an EduDocs-instance, it is not possible to set groupadmins
-        if row[5]:
-          groupadminlist = html.escape(row[5]).split(config_csvDelimiterGroups) # Groupadmin Values in the CSV-file are split by semicolon --> load into list
-        else:
-          groupadminlist = []
-      else:
-        groupadminlist = []
-      print("Nutzername:",html.escape(row[0]),"| Anzeigename:",html.escape(row[1]),"| Passwort: ","*" * len(row[2]) + 
-      "| E-Mail:",html.escape(row[3]),"| Gruppen:",grouplist,"| Gruppen-Admin für:",groupadminlist,"| Speicherplatz:",html.escape(row[6]),)
-    else:
-      print("Username:",html.escape(row[0]),"| Display name:",html.escape(row[1]),"| Password: ","*" * len(row[2]) + 
-    "| Email:",html.escape(row[3]),"| Groups:",html.escape(row[4]),"| Group admin for:",html.escape(row[5]),"| Quota:",html.escape(row[6]),)
+    
+    print("Username:",html.escape(row[0]),"| Display name:",html.escape(row[1]),"| Password: ","*" * len(row[2]) + "| Email:",html.escape(row[3]),"| Groups:",html.escape(row[4]),"| Group admin for:",html.escape(row[5]),"| Quota:",html.escape(row[6]),)
     # build the dataset for the request
     data = [
       ('userid', html.escape(row[0])),
@@ -416,11 +319,11 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
     ]
 
     # if value exists: append single groups to data array/list for CURL
-    if not config_EduDocs == 'yes':  
-      if row[4]:
-        grouplist = html.escape(row[4]).split(config_csvDelimiterGroups) # Groups in the CSV-file are split by semicolon --> load into list
-      else:
-        grouplist = []
+    
+    if row[4]:
+      grouplist = html.escape(row[4]).split(config_csvDelimiterGroups) # Groups in the CSV-file are split by semicolon --> load into list
+    else:
+      grouplist = []
     # check if group exists  
     for group in grouplist:
      try:
@@ -464,14 +367,14 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
      data.append(('groups[]', group.strip())) # groups is parameter NC API
 
     # if value exists: append group admin values to data array/list for CURL
-    if not config_EduDocs == 'yes': # if you import students in an EduDocs-Instance, it is not possible to set groupadmins
-      if row[5]:
-        groupadminlist = html.escape(row[5]).split(config_csvDelimiterGroups) # Groupadmin Values in the CSV-file are split by semicolon --> load into list
-        try:
-          for groupadmin in groupadminlist: 
-            data.append(('subadmin[]', groupadmin.strip())) # subadmin is parameter NC API
-        except NameError:
-          print("groupadminlist is not defined")
+   
+    if row[5]:
+      groupadminlist = html.escape(row[5]).split(config_csvDelimiterGroups) # Groupadmin Values in the CSV-file are split by semicolon --> load into list
+      try:
+        for groupadmin in groupadminlist: 
+          data.append(('subadmin[]', groupadmin.strip())) # subadmin is parameter NC API
+      except NameError:
+        print("groupadminlist is not defined")
 
     # perform the request
     try:
@@ -513,10 +416,8 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
 
       # prepare pdf-output (if pdfOneDoc == no)
       if config_pdfOneDoc == 'no':
-        if config_EduDocs == 'yes':
-          output_filename = config_schoolgroup + "_" + html.escape(row[0]) + "_" + today + ".pdf"
-        else:
-          output_filename = html.escape(row[0]) + "_" + today + ".pdf"
+       
+        output_filename = html.escape(row[0]) + "_" + today + ".pdf"
  
         output_filepath = os.path.join( output_dir, output_filename )
         
@@ -524,19 +425,14 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
                                 rightMargin=72,leftMargin=72,
                                 topMargin=52,bottomMargin=18)       
 
-      if config_EduDocs == 'yes':
-        nclogo = "assets/EduDocs_Logo.jpg" # EduDocs-logo (if in EduDocs-mode)
-      else:
-        nclogo = "assets/Logo_WLLV.jpeg" # nextcloud-logo (if in normal mode)
+      
+      nclogo = "assets/Logo_WLLV.jpeg" # nextcloud-logo (if in normal mode)
       ncuserlogin = html.escape(row[0]) # loginname
       ncusername = html.escape(row[1]) # username
       ncpassword = html.escape(row[2]) # password
       nclink = config_protocol + "://" + config_ncUrl # adds nextcloud-url
         # adds nextcloud-logo to pdf-file 
-      if config_EduDocs == 'yes':
-        im = Image(nclogo, 150, 87)
-      else:
-        im = Image(nclogo, 150, 106)
+      im = Image(nclogo, 150, 106)
       Story.append(im)
       Story.append(Spacer(1, 12))
 
@@ -544,40 +440,21 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       styles=getSampleStyleSheet()
       styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
       # adds text to pdf-file
-      if config_EduDocs == 'yes':
-        ptext = '<font size=14>Hallo %s,</font>' % ncusername
-      else:
-        ptext = '<font size=14>Hello %s,</font>' % ncusername
+
+      ptext = '<font size=14>Hallo %s,</font>' % ncusername
       Story.append(Paragraph(ptext, styles["Justify"]))
       Story.append(Spacer(1, 12))
 
-      if config_EduDocs == 'yes':
-        if config_schoolgroup == 'SchuelerInnen':
-          ptext = '<font size=14>Für dich wurde ein Edu-Docs-Account angelegt.</font>'
-        else:
-          ptext = '<font size=14>Für Sie wurde ein Edu-Docs-Account angelegt.</font>'
-      else:
-        ptext = '<font size=14>a Nextcloud-account has been generated for you.</font>'
+      ptext = '<font size=14>Für Sie wurde ein Nextcloud angelegt.</font>'
       Story.append(Paragraph(ptext, styles["Justify"]))
       Story.append(Spacer(1, 12))    
 
-      if config_EduDocs == 'yes':
-        if config_schoolgroup == 'SchuelerInnen':
-          ptext = '<font size=14>Du kannst dich mit folgenden Nutzerdaten einloggen:</font>'
-        else:
-          ptext = '<font size=14>Sie können sich mit folgenden Nutzerdaten einloggen:</font>'
-      else:
-        ptext = '<font size=14>You can login with the following user data:</font>'
+
+      ptext = '<font size=14>Sie können sich mit folgenden Nutzerdaten einloggen:</font>'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 36))
 
-      if config_EduDocs == 'yes':
-        if config_schoolgroup == 'SchuelerInnen':
-          ptext = '<font size=14>Link zu deiner EduDocs-Instanz:</font>'
-        else:
-          ptext = '<font size=14>Link zu Ihrer EduDocs-Instanz:</font>'
-      else:
-        ptext = '<font size=14>Link to your Nextcloud:</font>'
+      ptext = '<font size=14>Link zu Ihrer Nextcloud-Instanz:</font>'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 12))    
 
@@ -585,10 +462,7 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 24))
 
-      if config_EduDocs == 'yes':
-        ptext = '<font size=14>Nutzername:</font>'
-      else:
-        ptext = '<font size=14>Username:</font>'
+      ptext = '<font size=14>Nutzername:</font>'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 12))    
 
@@ -596,10 +470,7 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 24))
 
-      if config_EduDocs == 'yes':
-        ptext = '<font size=14>Passwort:</font>'
-      else:
-        ptext = '<font size=14>Password:</font>'
+      ptext = '<font size=14>Passwort:</font>'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 12))    
 
@@ -607,19 +478,9 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 24))
 
-      if config_EduDocs == 'yes':
-        if config_schoolgroup == 'SchuelerInnen':
-          ptext = '<font size=14>Alternativ kannst du mithilfe der Nextcloud-App folgenden QR-Code scannen:</font>'
-        else:
-          ptext = '<font size=14>Alternativ können Sie mithilfe der Nextcloud-App folgenden QR-Code scannen:</font>'
-      else:
-        ptext = '<font size=14>Alternatively, you can scan the following QR-Code in the Nextcloud app:</font>'
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 24))       
-      # adds qr-code to pdf-file
-      #im2 = Image(os.path.join( tmp_dir, html.escape(row[0]) + ".jpg" ), 200, 200)
-      #Story.append(im2)
-      #del im2
+
       if config_pdfOneDoc == 'no':
         # create pdf-file (single documents)
         doc.build(Story)	  
@@ -634,29 +495,15 @@ filelist = [ f for f in os.listdir(tmp_dir) ]
 for f in filelist:
     os.remove(os.path.join(tmp_dir, f))
 
-if config_EduDocs == 'yes':
-  print("")
-  print("###################################################################################")
-  print("# Kontrollieren Sie den Status-Code der Nutzergenerierung oben oder in            #")
-  print("# der output.log-Datei im Verzeichnis des Import-Scripts.                         #")
-  print("# Die erfolgreich importierten Nutzer sollten zudem nun in Ihrer EduDocs-Instanz  #")
-  print("# zu sehen sein.                                                                  #")
-  print("#                                                                                 #")
-  print("# Es wurde für jeden Nutzer eine PDF-Seite mit Infos zur Anmeldung generiert.     #")
-  print("#                                                                                 #")
-  print("# Löschen Sie zu Ihrer Sicherheit unbedingt die Zugangsdaten aus der config.xml.  #")
-  print("###################################################################################")
-  print("")
-  input("Drücken Sie eine beliebige Taste, um den Prozess zu beenden.")
-else:
-  print("")
-  print("###################################################################################")
-  print("# Control the status codes of the user creation above or in the output.log.       #")
-  print("# You should as well see the users in your Nextcloud now.                         #")
-  print("#                                                                                 #")
-  print("# A PDF-File with login-info and qr-code has been generated for every user.       #")
-  print("#                                                                                 #")
-  print("# For security reasons: please delete your credentials from config.xml            #")
-  print("###################################################################################")
-  print("")
-  input("Press [ANY KEY] to confirm and end the process.")
+
+print("")
+print("###################################################################################")
+print("# Control the status codes of the user creation above or in the output.log.       #")
+print("# You should as well see the users in your Nextcloud now.                         #")
+print("#                                                                                 #")
+print("# A PDF-File with login-info and qr-code has been generated for every user.       #")
+print("#                                                                                 #")
+print("# For security reasons: please delete your credentials from config.xml            #")
+print("###################################################################################")
+print("")
+input("Press [ANY KEY] to confirm and end the process.")
