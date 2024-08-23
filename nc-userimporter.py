@@ -258,7 +258,7 @@ def dynamicPW(length):
 
 # display expected results before executing CURL
 
-def usercreate():  
+def showuser():  
   usertable = [["Username","Display name","Password","Email","Groups","Group admin for","Quota"]]
   with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8') as csvfile:
     readCSV = csv.reader(csvfile, delimiter=config_csvDelimiter)
@@ -284,7 +284,9 @@ def usercreate():
   input("If everything is fine, press [ANY KEY] to continue. If not, press [CONTROL + C] to cancel.")
   print("\nYou confirmed. I will now create the users and groups. This can take a long time...\n")
 
+showuser()
 # prepare pdf-output (if pdfOneDoc == yes)
+
 if config_pdfOneDoc == 'yes':
 
   output_filename = "userlist_" + today + ".pdf"
@@ -477,9 +479,7 @@ with codecs.open(os.path.join(appdir, config_csvfile),mode='r', encoding='utf-8'
       ptext = '<font size=14>%s</font>' % ncpassword
       Story.append(Paragraph(ptext, styles["Normal"]))
       Story.append(Spacer(1, 24))
-
-      Story.append(Paragraph(ptext, styles["Normal"]))
-      Story.append(Spacer(1, 24))       
+      
 
       if config_pdfOneDoc == 'no':
         # create pdf-file (single documents)
